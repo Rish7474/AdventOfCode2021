@@ -11,6 +11,9 @@ pub struct BingoBoard {
     board_map: HashMap<u32, (u32, u32)>,
 }
 
+// Parses the bingo match encoding.
+// Extracts the bingo moves from the first line.
+// The extacts bingo boards of size BOARD_SIZE from rest of the lines.
 pub fn init_bingo_attributes(bingo_data: &Vec<&str>) -> (Vec<u32>, Vec<BingoBoard>) {
     let bingo_moves: Vec<u32> = bingo_data[0]
         .split(",")
@@ -27,7 +30,6 @@ pub fn init_bingo_attributes(bingo_data: &Vec<&str>) -> (Vec<u32>, Vec<BingoBoar
             unmarked_sum: 0,
             board_map: HashMap::new(),
         };
-
         for r in 0..BOARD_SIZE {
             let row: Vec<u32> = board_encoding[r as usize]
                 .split_whitespace()
@@ -45,11 +47,15 @@ pub fn init_bingo_attributes(bingo_data: &Vec<&str>) -> (Vec<u32>, Vec<BingoBoar
     return (bingo_moves, bingo_boards);
 }
 
+// Determines the bingo match score of the ith win.
+// match score = winning bingo move * unmarked numbers on the board
+// if ith_win == -1, the score of the last board to win is return.
 pub fn evaluate_bingo_match(bingo_data: &Vec<&str>, ith_win: i32) -> u32 {
     assert_ne!(ith_win, 0);
     let (bingo_moves, mut bingo_boards) = init_bingo_attributes(&bingo_data);
     let num_boards: usize = bingo_boards.len();
     assert!(ith_win <= num_boards as i32);
+    let ith_win = if ith_win == -1 { num_boards as i32 } else { ith_win };
     let mut winning_boards: HashSet<i32> = HashSet::with_capacity(num_boards);
 
     for bingo_move in &bingo_moves {
@@ -61,12 +67,9 @@ pub fn evaluate_bingo_match(bingo_data: &Vec<&str>, ith_win: i32) -> u32 {
                     bingo_board.col_markings[col as usize] += 1;
 
                     if bingo_board.row_markings[row as usize] == BOARD_SIZE
-                        || bingo_board.col_markings[col as usize] == BOARD_SIZE
-                    {
+                        || bingo_board.col_markings[col as usize] == BOARD_SIZE {
                         winning_boards.insert(bingo_board.id);
-                        if winning_boards.len() as i32 == ith_win
-                            || (ith_win == -1 && winning_boards.len() as i32 == num_boards as i32)
-                        {
+                        if winning_boards.len() as i32 == ith_win {
                             return bingo_move * bingo_board.unmarked_sum;
                         }
                     }
